@@ -134,22 +134,13 @@ public static class ShockComp_CompPostTick_Patch
                 Label notFixedNowLabel = generator.DefineLabel();
                 notFixedNowLabelContainer.labels.Add(notFixedNowLabel);
 
+                CodeInstruction notPastFixedPointLabelContainer = new(OpCodes.Nop);
+                Label notPastFixedPointLabel = generator.DefineLabel();
+                notPastFixedPointLabelContainer.labels.Add(notPastFixedPointLabel);
+
                 skipSeverityIncrementLabelContainer = new(OpCodes.Nop);
                 Label skipSeverityIncrementLabel = generator.DefineLabel();
                 skipSeverityIncrementLabelContainer.labels.Add(skipSeverityIncrementLabel);
-
-                // skip original implementation and re-use original label for return
-                Label originalRetLabel = default;
-                for (; i < originalInstructions.Length; i++)
-                {
-                    CodeInstruction originalInstruction = originalInstructions[i];
-                    Logger.LogVerbose($"{originalInstruction.opcode} {originalInstruction.operand}");
-                    if (originalInstructions[i].opcode == OpCodes.Brfalse)
-                    {
-                        originalRetLabel = originalInstructions[i].labels[0];
-                        break;
-                    }
-                }
 
                 // inject patch
                 transpiledMethodBody
@@ -158,9 +149,25 @@ public static class ShockComp_CompPostTick_Patch
                     .Append(OpCodes.Brfalse_S, notFixedNowLabel)        // if (!this.fixedNow) goto NOT_FIXED_NOW
                     .Append(OpCodes.Ldarg_0)                            // push this
                     .Append(OpCodes.Call, _instanceGetPastFixedPoint)   // load this.PastFixedPoint
-                    .Append(OpCodes.Brfalse_S, originalRetLabel)        // if (!this.PastFixedPoint) goto return
+                    .Append(OpCodes.Brfalse_S, notPastFixedPointLabel)  // if (!this.PastFixedPoint) goto NOT_PAST_FIXED_POINT
                     .Append(OpCodes.Br, skipSeverityIncrementLabel)     // goto SKIP_SEVERITY_INCREMENT
-                    .Append(notFixedNowLabelContainer);                 // NOT_FIXED_NOW:
+                    .Append(notPastFixedPointLabelContainer)            // NOT_PAST_FIXED_POINT:
+                    .Append(OpCodes.Ret);
+
+                // keep original implementation (required for label referencecs)
+                for (; i < originalInstructions.Length; i++)
+                {
+                    CodeInstruction originalInstruction = originalInstructions[i];
+                    transpiledMethodBody.Append(originalInstruction);
+                    Logger.LogVerbose($"{originalInstruction.opcode} {originalInstruction.operand}");
+                    if (originalInstructions[i].opcode == OpCodes.Brfalse)
+                    {
+                        break;
+                    }
+                }
+
+                // NOT_FIXED_NOW: (skipping past original implementation)
+                transpiledMethodBody.Append(notFixedNowLabelContainer);
 
                 if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_1_FIXED_POINT_CHECK))
                 {
