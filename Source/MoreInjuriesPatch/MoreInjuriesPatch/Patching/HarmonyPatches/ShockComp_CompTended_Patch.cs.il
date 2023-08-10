@@ -49,6 +49,9 @@
     IL_0031: ldarg.0      // this
     IL_0032: ldc.i4.1
     IL_0033: stfld        bool Oof.ShockComp::fixedNow
+
+//  INJECT CHECKPOINT_3_INSTALLED_LOGGING_HOOK HERE!
+
     IL_0038: nop
 
     IL_0039: ret

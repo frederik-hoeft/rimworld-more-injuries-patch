@@ -44,6 +44,10 @@ public static class ShockComp_CompTended_Patch
      *     return;
      * }
      */
+    /// <summary>
+    /// Bloodloss fully treated (transfusion) => hypovolemic shock treated / stabilizing. 
+    /// Organ hypoxia may continue until fully stabilized (hypovolemic shock < 60%) (transfusion takes its time)
+    /// </summary>
     static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
         const string CHECKPOINT_1_NULL_CHECK = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 1: null check injected";
@@ -91,9 +95,9 @@ public static class ShockComp_CompTended_Patch
             {
                 // install logging hook
                 transpiledMethodBody
-                    .Append(OpCodes.Ldarg_0)
-                    .Append(OpCodes.Ldarg_1)
-                    .Append(OpCodes.Call, _loggingHook);
+                    .Append(OpCodes.Ldarg_0)                // push this
+                    .Append(OpCodes.Ldarg_1)                // push quality
+                    .Append(OpCodes.Call, _loggingHook);    // invoke static method
                 if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_3_INSTALLED_LOGGING_HOOK))
                 {
                     goto FAILURE;
@@ -126,15 +130,15 @@ public static class ShockComp_CompTended_Patch
             double requiredQuality = shockComp.Props.BleedSeverityCurve.Evaluate(shockComp.parent.Severity);
             if ((double)quality >= requiredQuality)
             {
-                Logger.Error($"{nameof(OnFixedNow_LoggingHook)} fired due to default behavior! Tending quality ({quality}) was good enough (>= {requiredQuality}) and hypovolemic shock *should* be fixed now :)");
+                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to default behavior! Tending quality ({quality}) was good enough (>= {requiredQuality}) and hypovolemic shock *should* be fixed now :)");
             }
             else if (shockComp.BloodLoss is null)
             {
-                Logger.Error($"{nameof(OnFixedNow_LoggingHook)} fired due to {nameof(ShockComp_CompTended_Patch)} (bloodloss was fixed)! Hypovolemic shock *should* be fixed now :)");
+                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to {nameof(ShockComp_CompTended_Patch)} (bloodloss was fixed)! Hypovolemic shock *should* be fixed now :)");
             }
             else
             {
-                Logger.Error($"{nameof(OnFixedNow_LoggingHook)} fired for no reason :C {nameof(ShockComp_CompTended_Patch)} seems to be broken!");
+                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired for no reason :C {nameof(ShockComp_CompTended_Patch)} seems to be broken!");
             }
         }
     }
