@@ -11,7 +11,6 @@ namespace MoreInjuriesPatch.Patching.HarmonyPatches;
 
 using static MoreInjuriesPatchMod;
 
-[HarmonyDebug]
 [HarmonyPatch(typeof(ShockComp), nameof(ShockComp.CompPostTick))]
 public static class ShockComp_CompPostTick_Patch
 {
@@ -57,16 +56,21 @@ public static class ShockComp_CompPostTick_Patch
      *   base.CompPostTick(ref severityAdjustment);
      *   if (((this.BloodLoss != null ? 0 : (!this.PastFixedPoint ? 1 : 0)) | (this.fixedNow ? 1 : 0)) != 0)
      *     this.parent.Severity -= 2.5E-05f;
-     *   // CHECKPOINT_1_FIXED_POINT_CHECK
-     *   if (this.fixedNow)
-     *   { 
-     *      if (!this.PastFixedPoint)
-     *      {
-     *          return;
-     *      }
-     *      goto SKIP_SEVERITY_INCREMENT;
-     *   }
      *   
+     *   // CHECKPOINT_1_FIXED_POINT_CHECK
+     *   if (!this.fixedNow)
+     *      goto NOT_FIXED_NOW;
+     *   if (!this.PastFixedPoint) 
+     *      goto NOT_PAST_FIXED_POINT;
+     *   goto SKIP_SEVERITY_INCREMENT;
+     * NOT_PAST_FIXED_POINT:
+     *   return;
+     *   
+     *   // old implementation
+     *   if (this.fixedNow)
+     *     return;
+     *     
+     *   NOT_FIXED_NOW:
      *   if (!this.PastFixedPoint)
      *   {
      *     this.parent.Severity = this.BloodLoss.Severity;
@@ -166,7 +170,7 @@ public static class ShockComp_CompPostTick_Patch
                     }
                 }
 
-                // NOT_FIXED_NOW: (skipping past original implementation)
+                // label NOT_FIXED_NOW: (skipping past original implementation)
                 transpiledMethodBody.Append(notFixedNowLabelContainer);
 
                 if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_1_FIXED_POINT_CHECK))

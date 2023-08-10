@@ -130,11 +130,11 @@ public static class ShockComp_CompTended_Patch
             double requiredQuality = shockComp.Props.BleedSeverityCurve.Evaluate(shockComp.parent.Severity);
             if ((double)quality >= requiredQuality)
             {
-                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to default behavior! Tending quality ({quality}) was good enough (>= {requiredQuality}) and hypovolemic shock *should* be fixed now :)");
+                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to default behavior! Tending quality ({quality}) was good enough (>= {requiredQuality}) and hypovolemic shock should be fixed now :)");
             }
             else if (shockComp.BloodLoss is null)
             {
-                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to {nameof(ShockComp_CompTended_Patch)} (bloodloss was fixed)! Hypovolemic shock *should* be fixed now :)");
+                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to {nameof(ShockComp_CompTended_Patch)} (bloodloss was fixed)! Hypovolemic shock should be fixed now :)");
             }
             else
             {
