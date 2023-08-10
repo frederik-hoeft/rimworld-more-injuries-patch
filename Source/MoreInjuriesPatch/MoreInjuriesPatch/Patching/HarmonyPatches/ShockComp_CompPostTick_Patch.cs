@@ -9,9 +9,9 @@ using Verse;
 
 namespace MoreInjuriesPatch.Patching.HarmonyPatches;
 
-using static HarmonyLib.Code;
 using static MoreInjuriesPatchMod;
 
+[HarmonyDebug]
 [HarmonyPatch(typeof(ShockComp), nameof(ShockComp.CompPostTick))]
 public static class ShockComp_CompPostTick_Patch
 {
@@ -74,6 +74,7 @@ public static class ShockComp_CompPostTick_Patch
      *   else
      *   {
      *     this.parent.Severity += 5E-05f;
+     *     // CHECKPOINT_2_SKIP_SEVERITY_INCREMENT_LABEL
      *   SKIP_SEVERITY_INCREMENT:
      *     if (this.ticks >= 300 && Rand.Chance(OofMod.settings.hypoxiaChance))
      *     {
@@ -132,9 +133,11 @@ public static class ShockComp_CompPostTick_Patch
                 CodeInstruction notFixedNowLabelContainer = new(OpCodes.Nop);
                 Label notFixedNowLabel = generator.DefineLabel();
                 notFixedNowLabelContainer.labels.Add(notFixedNowLabel);
+
                 CodeInstruction notPastFixedPointLabelContainer = new(OpCodes.Nop);
                 Label notPastFixedPointLabel = generator.DefineLabel();
                 notPastFixedPointLabelContainer.labels.Add(notPastFixedPointLabel);
+
                 skipSeverityIncrementLabelContainer = new(OpCodes.Nop);
                 Label skipSeverityIncrementLabel = generator.DefineLabel();
                 skipSeverityIncrementLabelContainer.labels.Add(skipSeverityIncrementLabel);
