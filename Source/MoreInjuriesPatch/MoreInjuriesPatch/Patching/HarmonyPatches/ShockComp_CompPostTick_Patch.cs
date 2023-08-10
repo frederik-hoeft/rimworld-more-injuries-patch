@@ -125,7 +125,7 @@ public static class ShockComp_CompPostTick_Patch
                     }
                     else
                     {
-                        i = j - 1;
+                        i = j;
                         break;
                     }
                 }
@@ -146,7 +146,7 @@ public static class ShockComp_CompPostTick_Patch
                     .Append(OpCodes.Ldarg_0)                            // push this
                     .Append(OpCodes.Call, _instanceGetPastFixedPoint)   // load this.PastFixedPoint
                     .Append(OpCodes.Brfalse_S, notPastFixedPointLabel)  // if (!this.PastFixedPoint) goto NOT_PAST_FIXED_POINT
-                    .Append(OpCodes.Jmp, skipSeverityIncrementLabel)    // goto SKIP_SEVERITY_INCREMENT
+                    //.Append(OpCodes.Jmp, skipSeverityIncrementLabel)    // goto SKIP_SEVERITY_INCREMENT
                     .Append(notPastFixedPointLabelContainer)            // NOT_PAST_FIXED_POINT:
                     .Append(OpCodes.Ret)
                     .Append(notFixedNowLabelContainer);                 // NOT_FIXED_NOW:
@@ -181,7 +181,7 @@ public static class ShockComp_CompPostTick_Patch
                 transpiledMethodBody.Append(originalInstructions[i]);
                 Logger.LogVerbose($"{originalInstructions[i].opcode} {originalInstructions[i].operand}");
                 // inject jump target/label SKIP_SEVERITY_INCREMENT
-                transpiledMethodBody.Append(skipSeverityIncrementLabelContainer);
+                //transpiledMethodBody.Append(skipSeverityIncrementLabelContainer);
 
                 if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_2_SKIP_SEVERITY_INCREMENT_LABEL))
                 {
