@@ -21,6 +21,9 @@ internal static class Logger
     public static void Error(string message) => 
         Verse.Log.Error($"[{nameof(MoreInjuriesPatch)}] {message}");
 
+    public static void Warning(string message) =>
+        Verse.Log.Warning($"[{nameof(MoreInjuriesPatch)}] {message}");
+
     public static void LogAlways(string message) =>
         Verse.Log.Message($"[{nameof(MoreInjuriesPatch)}] {message}");
 }
