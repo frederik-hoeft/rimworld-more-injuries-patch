@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+    <packageId>Th3Fr3d.MoreInjuriesPatched</packageId>
+    <name>More Injuries Patched</name>
+    <author>Th3_Fr3d</author>
+    <description>
+Source code: https://github.com/frederik-hoeft/rimworld-more-injuries-patch
+    </description>
+
+    <modDependencies>
+        <li>
+            <packageId>brrainz.harmony</packageId>
+            <displayName>Harmony</displayName>
+            <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+        </li>
+        <li>
+            <packageId>Caulaflower.ExtendedInjuries</packageId>
+            <displayName>More Injuries</displayName>
+            <steamWorkshopUrl>steam://url/CommunityFilePage/2892012512</steamWorkshopUrl>
+        </li>
+    </modDependencies>
+
+    <supportedVersions>
+        <li>1.4</li>
+    </supportedVersions>
+</ModMetaData>
