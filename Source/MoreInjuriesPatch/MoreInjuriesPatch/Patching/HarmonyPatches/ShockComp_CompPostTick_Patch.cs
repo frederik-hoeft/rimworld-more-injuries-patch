@@ -134,7 +134,10 @@ public static class ShockComp_CompPostTick_Patch
      * }
      */
     /// <summary>
-    /// Continue adding organ hypoxia as the body stabilizes until hypovolemic shock passes below 60% threshold (instead of instant fix)
+    /// 1. Continue adding organ hypoxia as the body stabilizes until hypovolemic shock passes below 60% threshold (instead of instant fix).
+    /// 2. Automatically check for blood transfusion/bloodloss fix every 300 ticks
+    /// 3. If tended and bloodloss still present => slow down severity increase
+    /// 4. If tended but past 60% threshold => reduce organ hypoxia chance
     /// </summary>
     static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
     {
@@ -214,7 +217,7 @@ public static class ShockComp_CompPostTick_Patch
                     .Append(OpCodes.Brfalse_S, notPastFixedPointLabel)  // if (!this.PastFixedPoint) goto NOT_PAST_FIXED_POINT
                     .Append(OpCodes.Br, skipSeverityIncrementLabel)     // goto SKIP_SEVERITY_INCREMENT
                     .Append(notPastFixedPointLabelContainer)            // NOT_PAST_FIXED_POINT:
-                    .Append(OpCodes.Ret);
+                    .Append(OpCodes.Ret);                               // return;
 
                 if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_1_FIXED_POINT_CHECK_INJECTED))
                 {
@@ -264,7 +267,7 @@ public static class ShockComp_CompPostTick_Patch
 
                 CodeInstruction hypoxiaGiverLabelContainer = new(OpCodes.Nop);
                 Label hypoxiaGiverLabel = generator.DefineLabel();
-                incrementBy5LabelContainer.labels.Add(incrementBy5Label);
+                hypoxiaGiverLabelContainer.labels.Add(hypoxiaGiverLabel);
 
                 /*
                  *   if (!ShockComp_CompPostTick_Patch.IsTended_Hook(this))
@@ -357,12 +360,12 @@ public static class ShockComp_CompPostTick_Patch
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void EvaluateBloodlossState_Hook(ShockComp comp)
+    private static void EvaluateBloodlossState_Hook(ShockComp shockComp)
     {
-        if (comp.ticks >= 300 && !comp.fixedNow && comp.BloodLoss?.Severity is null or < 0.15f)
+        if (shockComp.ticks >= 300 && !shockComp.fixedNow && ShockComp_CompTended_Patch.HasBloodloss_hook(shockComp))
         {
-            comp.fixedNow = true;
-            Logger.LogVerbose($"{nameof(ShockComp_CompPostTick_Patch)}.{nameof(ShockComp_CompPostTick_Patch.EvaluateBloodlossState_Hook)}() fixed hypovolemic shock for {comp.Pawn?.Name}.");
+            shockComp.fixedNow = true;
+            Logger.LogVerbose($"{nameof(ShockComp_CompPostTick_Patch)}.{nameof(EvaluateBloodlossState_Hook)}() fixed hypovolemic shock for {shockComp.Pawn?.Name}.");
         }
     }
 

@@ -17,6 +17,9 @@ public static class ShockComp_CompTended_Patch
         .GetProperty(nameof(ShockComp.BloodLoss))
         .GetGetMethod();
 
+    private static readonly MethodInfo _hasBloodlossHook = typeof(ShockComp_CompTended_Patch)
+        .GetMethod(nameof(HasBloodloss_hook), BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly);
+
     private static readonly MethodInfo _loggingHook = typeof(ShockComp_CompTended_Patch)
         .GetMethod(nameof(OnFixedNow_LoggingHook), BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
 
@@ -50,7 +53,7 @@ public static class ShockComp_CompTended_Patch
     /// </summary>
     static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
-        const string CHECKPOINT_1_NULL_CHECK = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 1: null check injected";
+        const string CHECKPOINT_1_HAS_BLOODLOSS_HOOK_INSTALLED = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 1: ShockComp_CompTended_Patch.HasBloodloss_Hook() installed";
         const string CHECKPOINT_2_IF_CONDITION_EXPANDED = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 2: if-condition expanded";
         const string CHECKPOINT_3_INSTALLED_LOGGING_HOOK = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 3: logging hook installed!";
 
@@ -59,7 +62,7 @@ public static class ShockComp_CompTended_Patch
         Logger.Log($"Transpiling {TARGET_NAME} ...");
 
         TranspiledMethodBody transpiledMethodBody = TranspiledMethodBody.Empty()
-            .DefineCheckpoint(CHECKPOINT_1_NULL_CHECK)
+            .DefineCheckpoint(CHECKPOINT_1_HAS_BLOODLOSS_HOOK_INSTALLED)
             .DefineCheckpoint(CHECKPOINT_2_IF_CONDITION_EXPANDED)
             .DefineCheckpoint(CHECKPOINT_3_INSTALLED_LOGGING_HOOK);
 
@@ -83,10 +86,9 @@ public static class ShockComp_CompTended_Patch
                 // inject patch
                 transpiledMethodBody
                     .Append(OpCodes.Ldarg_0)                        // load "this" onto stack
-                    .Append(OpCodes.Call, _instanceGetBloodloss)    // invoke this.BloodLoss, leave result on stack
-                    .Append(OpCodes.Ldnull)                         // load null onto stack
-                    .Append(OpCodes.Ceq);                           // null check (void* == NULL), leave result on stack
-                if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_1_NULL_CHECK))
+                    .Append(OpCodes.Call, _hasBloodlossHook);       // ShockComp_CompTended_Patch.HasBloodloss_Hook(this), leave result on stack
+
+                if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_1_HAS_BLOODLOSS_HOOK_INSTALLED))
                 {
                     goto FAILURE;
                 }
@@ -123,6 +125,9 @@ public static class ShockComp_CompTended_Patch
         return instructions;
     }
 
+    public static bool HasBloodloss_hook(ShockComp shockComp) =>
+        shockComp.BloodLoss?.Severity is null or < 0.15f;
+
     private static void OnFixedNow_LoggingHook(ShockComp shockComp, float quality)
     {
         if (Settings.enableVerboseLogging)
@@ -132,7 +137,7 @@ public static class ShockComp_CompTended_Patch
             {
                 Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to default behavior! Tending quality ({quality}) was good enough (>= {requiredQuality}) and hypovolemic shock should be fixed now :)");
             }
-            else if (shockComp.BloodLoss is null)
+            else if (HasBloodloss_hook(shockComp))
             {
                 Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to {nameof(ShockComp_CompTended_Patch)} (bloodloss was fixed)! Hypovolemic shock should be fixed now :)");
             }
