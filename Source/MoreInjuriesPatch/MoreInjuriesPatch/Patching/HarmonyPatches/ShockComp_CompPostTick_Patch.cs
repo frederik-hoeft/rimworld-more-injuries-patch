@@ -87,19 +87,14 @@ public static class ShockComp_CompPostTick_Patch
      *      goto NOT_FIXED_NOW;
      *   if (!this.PastFixedPoint) 
      *      goto NOT_PAST_FIXED_POINT;
+     *   push to stack: !ShockComp_CompPostTick_Patch.IsTended_Hook(this) || ShockComp_CompPostTick_Patch.PushRandBool_Hook() 
      *   goto SKIP_SEVERITY_INCREMENT;
      * NOT_PAST_FIXED_POINT:
      *   return;
-     *   // CHECKPOINT_1_FIXED_POINT_CHECK_INJECTED
-     *   
-     *   // old implementation
-     *   if (this.fixedNow)
-     *     return;
-     *   // CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_SKIPPED
-     *     
      *   NOT_FIXED_NOW:
-     *   // CHECKPOINT_3_JUMP_LABEL_INSERTED
-     *   
+     *   // CHECKPOINT_1_FIXED_POINT_CHECK_INJECTED
+     *   // CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_REMOVED
+     *     
      *   if (!this.PastFixedPoint)
      *   {
      *     this.parent.Severity = this.BloodLoss.Severity;
@@ -109,14 +104,14 @@ public static class ShockComp_CompPostTick_Patch
      *     if (!ShockComp_CompPostTick_Patch.IsTended_Hook(this))
      *       goto INCREMENT_BY_5;
      *     this.parent.Severity += 2.5E-05f;
-     *     PushRandBool_Hook();
+     *     ShockComp_CompPostTick_Patch.PushRandBool_Hook();
      *     goto HYPOXIA_GIVER;
      *   INCREMENT_BY_5
      *     // CHECKPOINT_4_IS_TENDED_HOOK_INSTALLED
      *     this.parent.Severity += 5E-05f;
+     *     push true;
      *     // CHECKPOINT_5_ORIGINAL_INCREMENT_SKIPPED
      *   SKIP_SEVERITY_INCREMENT:
-     *     push true;
      *   HYPOXIA_GIVER:
      *     // CHECKPOINT_6_HYPOXIA_GIVER_LABEL_INSERTED
      *     // CHECKPOINT_7_IF_CONDITION_EXPANDED -----------+
@@ -143,12 +138,11 @@ public static class ShockComp_CompPostTick_Patch
     {
         const string CHECKPOINT_0_LD_ARG0_ENTRY_POINT_FOUND = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 0: ldarg.0 entry point found";
         const string CHECKPOINT_1_FIXED_POINT_CHECK_INJECTED = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 1: past-fixed-point check injected";
-        const string CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_SKIPPED = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 2: original instructions skipped";
-        const string CHECKPOINT_3_JUMP_LABEL_INSERTED = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 3: NOT_FIXED_NOW jump label inserted";
-        const string CHECKPOINT_4_IS_TENDED_HOOK_INSTALLED = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 4: IsTended_Hook hook installed";
-        const string CHECKPOINT_5_ORIGINAL_INCREMENT_SKIPPED = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 5: original severity increment skipped";
-        const string CHECKPOINT_6_HYPOXIA_GIVER_LABEL_INSERTED = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 6: HYPOXIA_GIVER jump label inserted";
-        const string CHECKPOINT_7_IF_CONDITION_EXPANDED = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 7: if-condition expanded";
+        const string CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_REMOVED = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 2: original instructions skipped";
+        const string CHECKPOINT_3_IS_TENDED_HOOK_INSTALLED = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 3: IsTended_Hook hook installed";
+        const string CHECKPOINT_4_ORIGINAL_INCREMENT_SKIPPED = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 4: original severity increment skipped";
+        const string CHECKPOINT_5_HYPOXIA_GIVER_LABEL_INSERTED = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 5: HYPOXIA_GIVER jump label inserted";
+        const string CHECKPOINT_6_IF_CONDITION_EXPANDED = $"{nameof(ShockComp_CompTended_Patch)} transpiler checkpoint 6: if-condition expanded";
 
         const string TARGET_NAME = $"{nameof(ShockComp)}.{nameof(ShockComp.CompPostTick)}()";
 
@@ -157,12 +151,11 @@ public static class ShockComp_CompPostTick_Patch
         TranspiledMethodBody transpiledMethodBody = TranspiledMethodBody.Empty()
             .DefineCheckpoint(CHECKPOINT_0_LD_ARG0_ENTRY_POINT_FOUND)
             .DefineCheckpoint(CHECKPOINT_1_FIXED_POINT_CHECK_INJECTED)
-            .DefineCheckpoint(CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_SKIPPED)
-            .DefineCheckpoint(CHECKPOINT_3_JUMP_LABEL_INSERTED)
-            .DefineCheckpoint(CHECKPOINT_4_IS_TENDED_HOOK_INSTALLED)
-            .DefineCheckpoint(CHECKPOINT_5_ORIGINAL_INCREMENT_SKIPPED)
-            .DefineCheckpoint(CHECKPOINT_6_HYPOXIA_GIVER_LABEL_INSERTED)
-            .DefineCheckpoint(CHECKPOINT_7_IF_CONDITION_EXPANDED);
+            .DefineCheckpoint(CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_REMOVED)
+            .DefineCheckpoint(CHECKPOINT_3_IS_TENDED_HOOK_INSTALLED)
+            .DefineCheckpoint(CHECKPOINT_4_ORIGINAL_INCREMENT_SKIPPED)
+            .DefineCheckpoint(CHECKPOINT_5_HYPOXIA_GIVER_LABEL_INSERTED)
+            .DefineCheckpoint(CHECKPOINT_6_IF_CONDITION_EXPANDED);
 
         bool foundFirstSetSeverityCall = false;
         CodeInstruction[] originalInstructions = instructions.ToArray();
@@ -216,37 +209,37 @@ public static class ShockComp_CompPostTick_Patch
                     .Append(OpCodes.Ldarg_0)                            // push this
                     .Append(OpCodes.Call, _instanceGetPastFixedPoint)   // load this.PastFixedPoint
                     .Append(OpCodes.Brfalse_S, notPastFixedPointLabel)  // if (!this.PastFixedPoint) goto NOT_PAST_FIXED_POINT
+                     // load required stack values for if statement in CHECKPOINT_7_IF_CONDITION_EXPANDED
+                    .Append(OpCodes.Ldarg_0)                            // this
+                    .Append(OpCodes.Call, _isTendedHook)                // ShockComp_CompPostTick_Patch.IsTended_Hook(this)
+                    .Append(OpCodes.Ldc_I4_0)                           
+                    .Append(OpCodes.Ceq)                                // !ShockComp_CompPostTick_Patch.IsTended_Hook(this)
+                    .Append(OpCodes.Ldarg_0)
+                    .Append(OpCodes.Call, _pushRandBoolHook)
+                    .Append(OpCodes.Or)                                 // || ShockComp_CompPostTick_Patch.PushRandBool_Hook()
                     .Append(OpCodes.Br, skipSeverityIncrementLabel)     // goto SKIP_SEVERITY_INCREMENT
                     .Append(notPastFixedPointLabelContainer)            // NOT_PAST_FIXED_POINT:
-                    .Append(OpCodes.Ret);                               // return;
+                    .Append(OpCodes.Ret)                                // return;
+                    .Append(notFixedNowLabelContainer);                 // NOT_FIXED_NOW:
 
                 if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_1_FIXED_POINT_CHECK_INJECTED))
                 {
                     goto FAILURE;
                 }
 
-                // keep original implementation (required for label referencecs)
+                // discard original implementation
                 for (; i < originalInstructions.Length; i++)
                 {
                     CodeInstruction originalInstruction = originalInstructions[i];
-                    //transpiledMethodBody.Append(originalInstruction);
                     Logger.LogVerbose($"DISCARD: {originalInstruction.opcode} {originalInstruction.operand}");
                     if (originalInstructions[i].opcode == OpCodes.Brfalse)
                     {
-                        if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_SKIPPED))
+                        if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_REMOVED))
                         {
                             goto FAILURE;
                         }
                         break;
                     }
-                }
-
-                // label NOT_FIXED_NOW: (skipping past original implementation)
-                transpiledMethodBody.Append(notFixedNowLabelContainer);
-
-                if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_3_JUMP_LABEL_INSERTED))
-                {
-                    goto FAILURE;
                 }
                 continue;
             }
@@ -266,9 +259,8 @@ public static class ShockComp_CompPostTick_Patch
                 Label incrementBy5Label = generator.DefineLabel();
                 incrementBy5LabelContainer.labels.Add(incrementBy5Label);
 
-                CodeInstruction hypoxiaGiverLabelContainer = new(OpCodes.Nop);
                 Label hypoxiaGiverLabel = generator.DefineLabel();
-                hypoxiaGiverLabelContainer.labels.Add(hypoxiaGiverLabel);
+                skipSeverityIncrementLabelContainer.labels.Add(hypoxiaGiverLabel);
 
                 /*
                  *   if (!ShockComp_CompPostTick_Patch.IsTended_Hook(this))
@@ -279,7 +271,6 @@ public static class ShockComp_CompPostTick_Patch
                  * INCREMENT_BY_5:
                  *   this.parent.Severity += 5E-05f;
                  * SKIP_SEVERITY_INCREMENT:
-                 *   push true;
                  * HYPOXIA_GIVER:
                  */
 
@@ -299,7 +290,7 @@ public static class ShockComp_CompPostTick_Patch
                     .Append(OpCodes.Br_S, hypoxiaGiverLabel)        // goto HYPOXIA_GIVER;
                     .Append(incrementBy5LabelContainer);            // INCREMENT_BY_5:
 
-                if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_4_IS_TENDED_HOOK_INSTALLED))
+                if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_3_IS_TENDED_HOOK_INSTALLED))
                 {
                     goto FAILURE;
                 }
@@ -312,7 +303,7 @@ public static class ShockComp_CompPostTick_Patch
                     transpiledMethodBody.Append(originalInstruction);
                     if (originalInstructions[i].opcode == OpCodes.Callvirt && originalInstructions[i].operand is MethodInfo { Name: $"set_{nameof(Hediff.Severity)}" })
                     {
-                        if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_5_ORIGINAL_INCREMENT_SKIPPED))
+                        if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_4_ORIGINAL_INCREMENT_SKIPPED))
                         {
                             goto FAILURE;
                         }
@@ -322,11 +313,10 @@ public static class ShockComp_CompPostTick_Patch
 
                 // inject labels and prepare CHECKPOINT_7_IF_CONDITION_EXPANDED
                 transpiledMethodBody
-                    .Append(skipSeverityIncrementLabelContainer)    // SKIP_SEVERITY_INCREMENT:
-                    .Append(OpCodes.Ldc_I4_1)                       // push true;
-                    .Append(hypoxiaGiverLabelContainer);            // HYPOXIA_GIVER:
+                    .Append(OpCodes.Ldc_I4_1)                       // push true (always apply organ hypoxia), unless we're coming from:
+                    .Append(skipSeverityIncrementLabelContainer);   // SKIP_SEVERITY_INCREMENT:,HYPOXIA_GIVER: 
 
-                if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_6_HYPOXIA_GIVER_LABEL_INSERTED))
+                if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_5_HYPOXIA_GIVER_LABEL_INSERTED))
                 {
                     goto FAILURE;
                 }
@@ -336,7 +326,7 @@ public static class ShockComp_CompPostTick_Patch
                 // combine (this.ticks >= 300) condition and _pushRandBoolHook/true
                 transpiledMethodBody.Append(OpCodes.And);
 
-                if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_7_IF_CONDITION_EXPANDED))
+                if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_6_IF_CONDITION_EXPANDED))
                 {
                     goto FAILURE;
                 }
