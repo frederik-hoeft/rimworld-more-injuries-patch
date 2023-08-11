@@ -12,7 +12,6 @@ namespace MoreInjuriesPatch.Patching.HarmonyPatches;
 
 using static MoreInjuriesPatchMod;
 
-[HarmonyDebug]
 [HarmonyPatch(typeof(ShockComp), nameof(ShockComp.CompPostTick))]
 public static class ShockComp_CompPostTick_Patch
 {
@@ -82,6 +81,7 @@ public static class ShockComp_CompPostTick_Patch
      *   if (((this.BloodLoss != null ? 0 : (!this.PastFixedPoint ? 1 : 0)) | (this.fixedNow ? 1 : 0)) != 0)
      *     this.parent.Severity -= 2.5E-05f;
      *   
+     *   // CHECKPOINT_0_LD_ARG0_ENTRY_POINT_FOUND
      *   ShockComp_CompPostTick_Patch.EvaluateBloodlossState_Hook(this);
      *   if (!this.fixedNow)
      *      goto NOT_FIXED_NOW;
@@ -107,14 +107,14 @@ public static class ShockComp_CompPostTick_Patch
      *     ShockComp_CompPostTick_Patch.PushRandBool_Hook();
      *     goto HYPOXIA_GIVER;
      *   INCREMENT_BY_5
-     *     // CHECKPOINT_4_IS_TENDED_HOOK_INSTALLED
+     *     // CHECKPOINT_3_IS_TENDED_HOOK_INSTALLED
      *     this.parent.Severity += 5E-05f;
      *     push true;
-     *     // CHECKPOINT_5_ORIGINAL_INCREMENT_SKIPPED
+     *     // CHECKPOINT_4_ORIGINAL_INCREMENT_SKIPPED
      *   SKIP_SEVERITY_INCREMENT:
      *   HYPOXIA_GIVER:
-     *     // CHECKPOINT_6_HYPOXIA_GIVER_LABEL_INSERTED
-     *     // CHECKPOINT_7_IF_CONDITION_EXPANDED -----------+
+     *     // CHECKPOINT_5_HYPOXIA_GIVER_LABEL_INSERTED
+     *     // CHECKPOINT_6_IF_CONDITION_EXPANDED -----------+
      *                                                      |
      *                                                      v
      *     if (this.ticks >= 300 && <BOOLEAN_VALUE_ON_STACK> && Rand.Chance(OofMod.settings.hypoxiaChance)) 
@@ -355,7 +355,7 @@ public static class ShockComp_CompPostTick_Patch
         if (shockComp.ticks == 299 && !shockComp.fixedNow && ShockComp_CompTended_Patch.BloodlossFixed_Hook(shockComp))
         {
             shockComp.fixedNow = true;
-            Logger.LogVerbose($"{nameof(ShockComp_CompPostTick_Patch)}.{nameof(EvaluateBloodlossState_Hook)}() fixed hypovolemic shock for {shockComp.Pawn?.Name}.");
+            Logger.Log($"{nameof(ShockComp_CompPostTick_Patch)}.{nameof(EvaluateBloodlossState_Hook)}() fixed hypovolemic shock for {shockComp.Pawn?.Name}.");
         }
     }
 

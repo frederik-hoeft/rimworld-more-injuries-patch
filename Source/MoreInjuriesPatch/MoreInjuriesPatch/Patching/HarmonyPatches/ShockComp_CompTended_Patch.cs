@@ -85,8 +85,8 @@ public static class ShockComp_CompTended_Patch
                 Logger.LogVerbose($"Found {OpCodes.Call} into base implementation of {TARGET_NAME} at offset 0x{offset:x8}! Applying patch...");
                 // inject patch
                 transpiledMethodBody
-                    .Append(OpCodes.Ldarg_0)                        // load "this" onto stack
-                    .Append(OpCodes.Call, _bloodlossFixedHook);       // ShockComp_CompTended_Patch.HasBloodloss_Hook(this), leave result on stack
+                    .Append(OpCodes.Ldarg_0)                    // load "this" onto stack
+                    .Append(OpCodes.Call, _bloodlossFixedHook); // ShockComp_CompTended_Patch.HasBloodloss_Hook(this), leave result on stack
 
                 if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_1_HAS_BLOODLOSS_HOOK_INSTALLED))
                 {
@@ -135,15 +135,15 @@ public static class ShockComp_CompTended_Patch
             double requiredQuality = shockComp.Props.BleedSeverityCurve.Evaluate(shockComp.parent.Severity);
             if ((double)quality >= requiredQuality)
             {
-                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to default behavior! Tending quality ({quality}) was good enough (>= {requiredQuality}) and hypovolemic shock should be fixed now :)");
+                Logger.Log($"{nameof(OnFixedNow_LoggingHook)} fired due to default behavior! Tending quality ({quality}) was good enough (>= {requiredQuality}) and hypovolemic shock should be fixed now :)");
             }
             else if (BloodlossFixed_Hook(shockComp))
             {
-                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to {nameof(ShockComp_CompTended_Patch)} (bloodloss was fixed)! Hypovolemic shock should be fixed now :)");
+                Logger.Log($"{nameof(OnFixedNow_LoggingHook)} fired due to {nameof(ShockComp_CompTended_Patch)} (bloodloss was fixed)! Hypovolemic shock should be fixed now :)");
             }
             else
             {
-                Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired for no reason :C {nameof(ShockComp_CompTended_Patch)} seems to be broken!");
+                Logger.Warning($"{nameof(OnFixedNow_LoggingHook)} fired for no reason :C {nameof(ShockComp_CompTended_Patch)} seems to be broken!");
             }
         }
     }
