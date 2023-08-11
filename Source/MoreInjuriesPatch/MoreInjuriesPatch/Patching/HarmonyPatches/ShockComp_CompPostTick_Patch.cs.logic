@@ -1,0 +1,83 @@
+﻿/*
+* ORIGINAL IL LOGIC:
+* public override void CompPostTick(ref float severityAdjustment)
+* {
+*   ++this.ticks;
+*   base.CompPostTick(ref severityAdjustment);
+*   if (((this.BloodLoss != null ? 0 : (!this.PastFixedPoint ? 1 : 0)) | (this.fixedNow ? 1 : 0)) != 0)
+*     this.parent.Severity -= 2.5E-05f;
+*   if (this.fixedNow)
+*     return;
+*   if (!this.PastFixedPoint)
+*   {
+*     this.parent.Severity = this.BloodLoss.Severity;
+*   }
+*   else
+*   {
+*     this.parent.Severity += 5E-05f;
+*     if (this.ticks >= 300 && Rand.Chance(OofMod.settings.hypoxiaChance))
+*     {
+*       BodyPartRecord bodyPartRecord = this.InternalBps.Where<BodyPartRecord>((Func<BodyPartRecord, bool>) (x => (double) x.def.bleedRate > 0.0)).RandomElement<BodyPartRecord>();
+*       Hediff hediff = HediffMaker.MakeHediff(ShockDefOf.InternalSuffocation, this.parent.pawn, bodyPartRecord);
+*       hediff.Severity = Rand.Range(2f, 5f);
+*       this.parent.pawn.health.AddHediff(hediff, bodyPartRecord);
+*       this.ticks = 0;
+*     }
+*   }
+* }
+* 
+* PATCHED IL LOGIC:
+* public override void CompPostTick(ref float severityAdjustment)
+* {
+*   ++this.ticks;
+*   base.CompPostTick(ref severityAdjustment);
+*   if (((this.BloodLoss != null ? 0 : (!this.PastFixedPoint ? 1 : 0)) | (this.fixedNow ? 1 : 0)) != 0)
+*     this.parent.Severity -= 2.5E-05f;
+*   
+*   // CHECKPOINT_0_LD_ARG0_ENTRY_POINT_FOUND
+*   ShockComp_CompPostTick_Patch.EvaluateBloodlossState_Hook(this);
+*   if (!this.fixedNow)
+*      goto NOT_FIXED_NOW;
+*   if (!this.PastFixedPoint) 
+*      goto NOT_PAST_FIXED_POINT;
+*   push to stack: !ShockComp_CompPostTick_Patch.IsTended_Hook(this) || ShockComp_CompPostTick_Patch.PushRandBool_Hook() 
+*   goto SKIP_SEVERITY_INCREMENT;
+* NOT_PAST_FIXED_POINT:
+*   return;
+*   NOT_FIXED_NOW:
+*   // CHECKPOINT_1_FIXED_POINT_CHECK_INJECTED
+*   // CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_REMOVED
+*     
+*   if (!this.PastFixedPoint)
+*   {
+*     this.parent.Severity = this.BloodLoss.Severity;
+*   }
+*   else
+*   {
+*     if (!ShockComp_CompPostTick_Patch.IsTended_Hook(this))
+*       goto INCREMENT_BY_5;
+*     this.parent.Severity += 2.5E-05f;
+*     ShockComp_CompPostTick_Patch.PushRandBool_Hook();
+*     goto HYPOXIA_GIVER;
+*   INCREMENT_BY_5
+*     // CHECKPOINT_3_IS_TENDED_HOOK_INSTALLED
+*     this.parent.Severity += 5E-05f;
+*     push true;
+*     // CHECKPOINT_4_ORIGINAL_INCREMENT_SKIPPED
+*   SKIP_SEVERITY_INCREMENT:
+*   HYPOXIA_GIVER:
+*     // CHECKPOINT_5_HYPOXIA_GIVER_LABEL_INSERTED
+*     // CHECKPOINT_6_IF_CONDITION_EXPANDED -----------+
+*                                                      |
+*                                                      v
+*     if (this.ticks >= 300 && <BOOLEAN_VALUE_ON_STACK> && Rand.Chance(OofMod.settings.hypoxiaChance)) 
+*     {
+*       BodyPartRecord bodyPartRecord = this.InternalBps.Where<BodyPartRecord>((Func<BodyPartRecord, bool>) (x => (double) x.def.bleedRate > 0.0)).RandomElement<BodyPartRecord>();
+*       Hediff hediff = HediffMaker.MakeHediff(ShockDefOf.InternalSuffocation, this.parent.pawn, bodyPartRecord);
+*       hediff.Severity = Rand.Range(2f, 5f);
+*       this.parent.pawn.health.AddHediff(hediff, bodyPartRecord);
+*       this.ticks = 0;
+*     }
+*   }
+* }
+*/
