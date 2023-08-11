@@ -17,8 +17,8 @@ public static class ShockComp_CompTended_Patch
         .GetProperty(nameof(ShockComp.BloodLoss))
         .GetGetMethod();
 
-    private static readonly MethodInfo _hasBloodlossHook = typeof(ShockComp_CompTended_Patch)
-        .GetMethod(nameof(HasBloodloss_hook), BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly);
+    private static readonly MethodInfo _bloodlossFixedHook = typeof(ShockComp_CompTended_Patch)
+        .GetMethod(nameof(BloodlossFixed_Hook), BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly);
 
     private static readonly MethodInfo _loggingHook = typeof(ShockComp_CompTended_Patch)
         .GetMethod(nameof(OnFixedNow_LoggingHook), BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
@@ -39,7 +39,7 @@ public static class ShockComp_CompTended_Patch
      * public override void CompTended(float quality, float maxQuality, int batchPosition = 0)
      * {
      *     base.CompTended(quality, maxQuality, batchPosition);
-     *     if (this.BloodLoss == null || (quality < this.Props.BleedSeverityCurve.Evaluate(this.parent.Severity)) == false)
+     *     if (ShockComp_CompTended_Patch.HasBloodloss_hook(this) || (quality < this.Props.BleedSeverityCurve.Evaluate(this.parent.Severity)) == false)
      *     {
      *         this.fixedNow = true;
      *         ShockComp_CompTended_Patch.OnFixedNow_LoggingHook(this, quality);
@@ -86,7 +86,7 @@ public static class ShockComp_CompTended_Patch
                 // inject patch
                 transpiledMethodBody
                     .Append(OpCodes.Ldarg_0)                        // load "this" onto stack
-                    .Append(OpCodes.Call, _hasBloodlossHook);       // ShockComp_CompTended_Patch.HasBloodloss_Hook(this), leave result on stack
+                    .Append(OpCodes.Call, _bloodlossFixedHook);       // ShockComp_CompTended_Patch.HasBloodloss_Hook(this), leave result on stack
 
                 if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_1_HAS_BLOODLOSS_HOOK_INSTALLED))
                 {
@@ -125,7 +125,7 @@ public static class ShockComp_CompTended_Patch
         return instructions;
     }
 
-    public static bool HasBloodloss_hook(ShockComp shockComp) =>
+    public static bool BloodlossFixed_Hook(ShockComp shockComp) =>
         shockComp.BloodLoss?.Severity is null or < 0.15f;
 
     private static void OnFixedNow_LoggingHook(ShockComp shockComp, float quality)
@@ -137,7 +137,7 @@ public static class ShockComp_CompTended_Patch
             {
                 Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to default behavior! Tending quality ({quality}) was good enough (>= {requiredQuality}) and hypovolemic shock should be fixed now :)");
             }
-            else if (HasBloodloss_hook(shockComp))
+            else if (BloodlossFixed_Hook(shockComp))
             {
                 Logger.LogVerbose($"{nameof(OnFixedNow_LoggingHook)} fired due to {nameof(ShockComp_CompTended_Patch)} (bloodloss was fixed)! Hypovolemic shock should be fixed now :)");
             }

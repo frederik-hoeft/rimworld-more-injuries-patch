@@ -362,7 +362,7 @@ public static class ShockComp_CompPostTick_Patch
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void EvaluateBloodlossState_Hook(ShockComp shockComp)
     {
-        if (shockComp.ticks >= 300 && !shockComp.fixedNow && ShockComp_CompTended_Patch.HasBloodloss_hook(shockComp))
+        if (shockComp.ticks == 299 && !shockComp.fixedNow && ShockComp_CompTended_Patch.BloodlossFixed_Hook(shockComp))
         {
             shockComp.fixedNow = true;
             Logger.LogVerbose($"{nameof(ShockComp_CompPostTick_Patch)}.{nameof(EvaluateBloodlossState_Hook)}() fixed hypovolemic shock for {shockComp.Pawn?.Name}.");
@@ -380,7 +380,7 @@ public static class ShockComp_CompPostTick_Patch
                 return !duration.AllowTend;
             }
         }
-        return false;
+        return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
