@@ -47,6 +47,7 @@ public static class ShockComp_CompPostTick_Patch
             BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly);
     
     /// <summary>
+    /// 0. Hypovolemic shocks are now mainly treated using blood/hemogen transfusions (should be compatible with any modded blood transfusions).
     /// 1. Continue adding organ hypoxia as the body stabilizes until hypovolemic shock passes below 60% threshold (instead of instant fix).
     /// 2. Automatically check for blood transfusion/bloodloss fix every 300 ticks
     /// 3. If tended and bloodloss still present => slow down severity increase
