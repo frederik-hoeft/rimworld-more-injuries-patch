@@ -37,7 +37,6 @@ public class MoreInjuriesPatchMod : Mod
         list.CheckboxLabeled("Enable verbose logging", ref Settings.enableVerboseLogging);
         list.GapLine();
         list.NewColumn();
-        list.SliderLabeled("", 9, 9, 9);
         list.Label($"How much less likely it is for organ hypoxia to occur if hypovolemic shock is tended (as opposed to being left untreated): {Settings.tendedHypovolemicShockHypoxiaReductionFactor}");
         Settings.tendedHypovolemicShockHypoxiaReductionFactor = (float)Math.Round((double)list.Slider(Settings.tendedHypovolemicShockHypoxiaReductionFactor, 0.0f, 1f), 2);
         list.End();
