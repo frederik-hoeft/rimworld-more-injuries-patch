@@ -214,7 +214,6 @@ public static class ShockComp_CompPostTick_Patch
                     .Append(OpCodes.Call, _isTendedHook)                // ShockComp_CompPostTick_Patch.IsTended_Hook(this)
                     .Append(OpCodes.Ldc_I4_0)                           
                     .Append(OpCodes.Ceq)                                // !ShockComp_CompPostTick_Patch.IsTended_Hook(this)
-                    .Append(OpCodes.Ldarg_0)
                     .Append(OpCodes.Call, _pushRandBoolHook)
                     .Append(OpCodes.Or)                                 // || ShockComp_CompPostTick_Patch.PushRandBool_Hook()
                     .Append(OpCodes.Br, skipSeverityIncrementLabel)     // goto SKIP_SEVERITY_INCREMENT
