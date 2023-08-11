@@ -141,6 +141,7 @@ public static class ShockComp_CompPostTick_Patch
     /// </summary>
     static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
     {
+        const string CHECKPOINT_0_LD_ARG0_ENTRY_POINT_FOUND = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 0: ldarg.0 entry point found";
         const string CHECKPOINT_1_FIXED_POINT_CHECK_INJECTED = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 1: past-fixed-point check injected";
         const string CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_SKIPPED = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 2: original instructions skipped";
         const string CHECKPOINT_3_JUMP_LABEL_INSERTED = $"{nameof(ShockComp_CompPostTick_Patch)} transpiler checkpoint 3: NOT_FIXED_NOW jump label inserted";
@@ -154,6 +155,7 @@ public static class ShockComp_CompPostTick_Patch
         Logger.Log($"Transpiling {TARGET_NAME} ...");
 
         TranspiledMethodBody transpiledMethodBody = TranspiledMethodBody.Empty()
+            .DefineCheckpoint(CHECKPOINT_0_LD_ARG0_ENTRY_POINT_FOUND)
             .DefineCheckpoint(CHECKPOINT_1_FIXED_POINT_CHECK_INJECTED)
             .DefineCheckpoint(CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_SKIPPED)
             .DefineCheckpoint(CHECKPOINT_3_JUMP_LABEL_INSERTED)
@@ -174,26 +176,25 @@ public static class ShockComp_CompPostTick_Patch
             {
                 foundFirstSetSeverityCall = true;
                 Logger.LogVerbose($"Found first {OpCodes.Callvirt} into Hediff.set_Severity! Applying patch...");
-                // skip nops
+                // skip nops and existing Ldarg_0 from old implementation.
                 for (int j = i + 1; j < originalInstructions.Length; j++)
                 {
-                    CodeInstruction nop = originalInstructions[j];
-                    if (nop.opcode == OpCodes.Nop)
+                    CodeInstruction originalInstruction = originalInstructions[j];
+                    Logger.LogVerbose($"{originalInstruction.opcode} {originalInstruction.operand}");
+                    transpiledMethodBody.Append(originalInstruction);
+                    if (originalInstruction.opcode == OpCodes.Ldarg_0 && originalInstruction.labels.Count > 0)
                     {
-                        Logger.LogVerbose($"{nop.opcode} {nop.operand}");
-                        transpiledMethodBody.Append(nop);
-                    }
-                    else
-                    {
-                        i = j;
+                        if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_0_LD_ARG0_ENTRY_POINT_FOUND))
+                        {
+                            goto FAILURE;
+                        }
                         break;
                     }
                 }
-
+                // we reuse existing Ldarg_0 from old implementation.
+                // this is IMPORTANT because that old Ldarg_0 has a jump label which we want to hijack!
                 // inject bloodloss evaluation hook
-                transpiledMethodBody
-                    .Append(OpCodes.Ldarg_0)
-                    .Append(OpCodes.Call, _bloodlossEvalHook);
+                transpiledMethodBody.Append(OpCodes.Call, _bloodlossEvalHook);
 
                 CodeInstruction notFixedNowLabelContainer = new(OpCodes.Nop);
                 Label notFixedNowLabel = generator.DefineLabel();
@@ -228,8 +229,8 @@ public static class ShockComp_CompPostTick_Patch
                 for (; i < originalInstructions.Length; i++)
                 {
                     CodeInstruction originalInstruction = originalInstructions[i];
-                    transpiledMethodBody.Append(originalInstruction);
-                    Logger.LogVerbose($"{originalInstruction.opcode} {originalInstruction.operand}");
+                    //transpiledMethodBody.Append(originalInstruction);
+                    Logger.LogVerbose($"DISCARD: {originalInstruction.opcode} {originalInstruction.operand}");
                     if (originalInstructions[i].opcode == OpCodes.Brfalse)
                     {
                         if (!transpiledMethodBody.TryCompleteCheckpoint(CHECKPOINT_2_ORIGINAL_INSTRUCTIONS_SKIPPED))
